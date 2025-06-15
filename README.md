@@ -2,19 +2,20 @@
 
 ## Introduction
 
-When it comes to data, Structured Query Language (SQL) is very useful as it is one of the main programming languages used to fetch database data. Microsoft Excel is often used like a database to store data in worksheets in a table-like fashion: columns with headers and many rows beneath the columns' headers.
+Structured Query Language (SQL) is a powerful tool for working with data, widely used to retrieve and manipulate information in databases. Microsoft Excel, while not a traditional database, is often used to store data in a table-like format—organized into columns with headers and corresponding rows of data.
 
-The Microsoft Excel spreadsheet `AceSqlForExcel.xlsm` provided in this GitHub repository uses VBA to expose the SQL capabilities present in all Excel workbooks. It lets you craft SQL statements to execute against Excel workbooks and view the results in new worksheets. It provides a quick and easy means to extract data from other spreadsheets without using the more complicated "Get External Data" and "Get & Transform" capabilities provided in Excel's "Data" tab. Instructions on how to use the this spreadsheet are contained within it's "Help" worksheet. 
+The `AceSqlForExcel.xlsm` workbook, available in this GitHub repository, uses VBA to unlock Excel’s built-in SQL capabilities. It allows you to craft and execute SQL statements directly against Excel workbooks and view the results in newly generated worksheets. This offers a fast, user-friendly alternative to Excel’s more complex *Get External Data* and *Get & Transform* tools found under the "Data" tab. Instructions for using the workbook are provided in the "Help" worksheet.
 
-Microsoft Excel handles SQL via its own SQL dialect. Excel inherited the Jet engine developed by Microsoft for MS-Access. Since Microsoft Office 2007 (with the .xlsx file extension), the ACE engine replaced the Jet engine. Neither engine is fully compliant with the SQL ANSI standards. 
+Excel processes SQL through its own dialect, originally powered by the Jet engine from Microsoft Access. Starting with Office 2007 and the introduction of the `.xlsx` format, Excel transitioned to the ACE engine. While neither engine is fully ANSI SQL-compliant, they both support a useful subset of features.
 
-The `AceSqlForExcel.xlsm` spreadsheet employes the ACE engine. It suports the core SQL statements of `SELECT`, `INSERT`, and `UPDATE`. It does not support `DELETE` statements. 
+`AceSqlForExcel.xlsm` specifically uses the ACE engine and supports the core SQL operations: `SELECT`, `INSERT`, and `UPDATE'. However, it does not support the `DELETE` statement.
 
-This document consolidates many [sources of information](#resourcesacknowlegements) regarding the Microsoft Excel SQL syntax, and the functions it supports. 
+This document brings together diverse [sources of information](#resourcesacknowlegements) on Microsoft Excel’s SQL syntax and its supported functions.
 
 # Table of Contents
 
-- [Introduction](#introduction)
+- [ACE SQL For Microsoft Excel](#ace-sql-for-microsoft-excel)
+  - [Introduction](#introduction)
 - [Table of Contents](#table-of-contents)
 - [Key Concepts](#key-concepts)
   - [Tables](#tables)
@@ -36,6 +37,7 @@ This document consolidates many [sources of information](#resourcesacknowlegemen
       - [Mathematical Functions](#mathematical-functions)
     - [Conditionals](#conditionals)
     - [Null Handling](#null-handling)
+    - [`SWITCH` Function](#switch-function)
     - [Aggregate Functions + Conditionals + Null Handling](#aggregate-functions--conditionals--null-handling)
     - [Formatting date values](#formatting-date-values)
       - [`FORMATDATETIME` function](#formatdatetime-function)
@@ -43,22 +45,27 @@ This document consolidates many [sources of information](#resourcesacknowlegemen
     - [Formatting numbers](#formatting-numbers)
   - [FROM clause](#from-clause)
   - [WHERE clause](#where-clause)
-    - [`WHERE` comparison operators](#where-comparison-operators)
-    - [`WHERE` logical operators](#where-logical-operators)
-      - [Boolean Precedence](#boolean-precedence)
-    - [`WHERE` with multiple criteria](#where-with-multiple-criteria)
-    - [`WHERE` with string values](#where-with-string-values)
-    - [`WHERE` with date values](#where-with-date-values)
-    - [`WHERE` with delimiters in text literals](#where-with-delimiters-in-text-literals)
+    - [Comparison Operators](#comparison-operators)
+    - [Logical Operators](#logical-operators)
+    - [LIKE Expressions / SQL Wildcards](#like-expressions--sql-wildcards)
+    - [Multiple Criteria / Boolean Precedence](#multiple-criteria--boolean-precedence)
+    - [String Values](#string-values)
+    - [Date Values](#date-values)
+    - [Delimiters in Text Literals](#delimiters-in-text-literals)
   - [GROUP BY clause](#group-by-clause)
   - [HAVING clause](#having-clause)
   - [ORDER BY clause](#order-by-clause)
-  - [JOIN clause](#join-clause)
+  - [Join Operations](#join-operations)
     - [INNER JOIN clause](#inner-join-clause)
     - [LEFT JOIN clause](#left-join-clause)
     - [RIGHT JOIN clause](#right-join-clause)
     - [CROSS JOIN clause](#cross-join-clause)
     - [Self Join](#self-join)
+  - [Algebraic Set Operations](#algebraic-set-operations)
+    - [UNION clause](#union-clause)
+    - [UNION ALL clause](#union-all-clause)
+    - [INTERSECT clause](#intersect-clause)
+    - [EXCEPT clause](#except-clause)
 - [Inserting Data](#inserting-data)
 - [Updating Data](#updating-data)
 - [Deleting/Dropping Data](#deletingdropping-data)
@@ -115,7 +122,7 @@ SQL alias syntax for columns follows the syntax format:
 
 _Syntax:_
 
-```
+```sql
     SELECT [column_name] AS column_alias_name FROM [worksheet$]
 ```
 
@@ -123,7 +130,7 @@ SQL alias syntax for tables follows the syntax format:
 
 _Syntax:_
 
-```
+```sql
     SELECT [column_name] FROM [worksheet$] AS table_alias_name
 ```
 
@@ -131,31 +138,33 @@ The following example shows multiple ways in which an alias can be expressed wit
 
 _Example:_
 
-```
+```sql
     SELECT [country] AS CC, [Units Sold]
-    FROM [Sales$] AS sales
-    WHERE [sales.segment] = 'Government' AND [sales].[CC] = 'US'
+    FROM   [Sales$] AS sales
+    WHERE  [sales.segment] = 'Government' AND [sales].[CC] = 'US'
 ```
 
 ## Strings
-Most SQL statements involve the use of string values as criteria in a [WHERE clause](#where-clause), or will return string values in the column results of a [SELECT clause](#select-clause). 
+
+Most SQL statements involve the use of string values as criteria in a [WHERE clause](#where-clause), or will return string values in the column results of a [SELECT clause](#select-clause).
 
 Strings are denoted in SQL using the single quotation mark `'` character, as opposed to the double quote `"` character used in VBA and other programming languages. A String value such as `'Central Region'` is properly formatted for use as selection criteria, or as a value to be inserted.
 
-Strings can be concatenated using the ampersand `&` character. For example, the statement  `'Central' & ' ' & 'Region'` equates to the String value `'Central Region'`. 
+Strings can be concatenated using the ampersand `&` character. For example, the statement `'Central' & ' ' & 'Region'` equates to the String value `'Central Region'`.
 
 Microsoft Excel SQL provides numerous String functions that perform operations on an input String and return a String or numeric value result. These functions can be combined to create unique input or output values depending upon the SQL statement. A table of commonly used [String Functions](#string-functions) is provided at the end of this document as reference.
 
 ## Null Values
-A Null Value is a value that is unavailable, unassigned, unknown or inapplicable. If a row lacks the data value for a particular column, that value is said to be null or to contain a null. A Null Value is like a character string of length zero, however you should never use a Null Value to represent a value of zero. 
 
-Since Microsoft Excel SQL allows null values, it is your responsibility to take them into consideration in your SQL statements. [Null Handling](#null-handling) is described in greater detail later in this document.
+A null value represents data that is unavailable, unassigned, unknown, or inapplicable. When a row lacks a value for a specific column, that column is said to be null or contain a null. While a null may resemble an empty string, it should never be used to signify a value of zero.
+
+Because Microsoft Excel SQL permits null values, you are responsible for handling them appropriately in your SQL queries. [Null Handling](#null-handling) is described in greater detail later in this document.
 
 # Querying Data
 
 Microsoft Excel SQL queries support `FROM`, `WHERE`, `GROUP BY`, `HAVING`, `ORDER BY`, and `JOIN` clauses. Excel SQL `SELECT` statements conform to the following pattern:
 
-```
+```sql
     SELECT [DISTINCT] [TOP [PERCENT] n] * | column1, column2 [AS alias2], ...
     [FROM worksheet]
     [WHERE condition]
@@ -174,7 +183,7 @@ A query that selects all rows and columns from the Excel file.
 
 _Example:_
 
-```
+```sql
     SELECT * FROM [Sales$];
 ```
 
@@ -186,7 +195,7 @@ The `TOP` option specifies how many rows to return.
 
 _Example:_
 
-```
+```sql
     SELECT TOP 5 [Quantity], [Name], [Price] FROM [Sales$];
 ```
 
@@ -198,7 +207,7 @@ The `TOP PERCENT` option specifies the percentage of the complete result set to 
 
 _Example:_
 
-```
+```sql
     SELECT TOP 25 PERCENT [Quantity], [Name], [Price] FROM [Sales$];
 ```
 
@@ -210,7 +219,7 @@ Create a query that selects specific columns from the Excel file.
 
 _Example:_
 
-```
+```sql
     SELECT [Quantity], [Name], [Price] FROM [Sales$];
 ```
 
@@ -220,7 +229,7 @@ Limit your query to a specific cell range.
 
 _Example:_
 
-```
+```sql
     SELECT [Quantity], [Name], [Price] FROM [Sales$A1:E101];
 ```
 
@@ -232,7 +241,7 @@ A column can contain duplicate values, and to list the distinct values, use the 
 
 _Example:_
 
-```
+```sql
     SELECT DISTINCT [Name], [Price] FROM [Sales$A1:E101];
 ```
 
@@ -254,7 +263,7 @@ An aggregate function performs a calculation on a set of values, and returns a s
 
 _Example:_
 
-```
+```sql
     SELECT COUNT(*)
     FROM [Sales$];
 ```
@@ -263,7 +272,7 @@ In this example the number of rows in the Sales worksheet is returned.
 
 _Example:_
 
-```
+```sql
     SELECT SUM([Units Sold]), AVG([Units Sold])
     FROM [Sales$]
 ```
@@ -288,7 +297,7 @@ Arithmetic operators can be used to perform mathematical operations against quer
 
 _Example:_
 
-```
+```sql
     SELECT [units sold] MOD 10 AS UNITS_SOLD_MOD_10
     FROM [Sales$]
 ```
@@ -297,7 +306,7 @@ Here the number of units sold is calculated as modulo 10 and the result is expre
 
 _Example:_
 
-```
+```sql
     SELECT [sale price], ([sale price] * 1.06) AS [sale price plus tax]
     FROM [Sales$]
 ```
@@ -319,7 +328,7 @@ The following scalar functions perform a calculation, usually based on input val
 
 _Example:_
 
-```
+```sql
     SELECT EXP(LOG(20)), LOG(EXP(20))
 ```
 
@@ -331,13 +340,13 @@ Conditionals are used to conditionally modify results. In Excel SQL, this is don
 
 _Example:_
 
-```
+```sql
     SELECT [Product], [Units Sold], [Sale Price],
     IIF([Sale Price] < 10.00,'SPECIAL!','')
     FROM [Sales$]
 ```
 
-Here the SQL returns the string 'SPECIAL!' if the price is less than $10.00; otherwise it returns a blank string.
+Here the SQL returns the string `'SPECIAL!'` if the price is less than $10.00; otherwise it returns a blank string.
 
 ### Null Handling
 
@@ -347,12 +356,92 @@ A simple example is:
 
 _Example:_
 
-```
+```sql
     SELECT IsNull([Units Sold])
     FROM [Sales$]
 ```
 
 The `IsNull()` function can be combined with the `IIF()` syntax to return a specific value in cases where a null is found in a column, and the actual column value where the value is not null.
+
+### `SWITCH` Function
+
+The `SWITCH` function evaluates a list of expressions and returns the corresponding value for the first expression in the list that is TRUE.
+
+_Syntax:_
+
+```sql
+    SELECT
+        SWITCH
+        (
+            expression1, value1,
+            expression2, value2,
+                ...
+            expression_n, value_n
+        )
+    FROM ...
+```
+
+_Example:_
+
+```sql
+    SELECT
+        SWITCH
+        (
+            [code] = 'A', 'Apple',
+            [code] = 'B', 'Banana'
+        )
+    FROM [Fruit$]
+```
+
+In this example, string literals will be mapped to the values of the `[code]` column. `NULL` will be returned if `[code]` contains a value other than `'A'` or `'B'`.
+
+A default `SWITCH` value can be specified by adding an expression of `TRUE` as the final expression in the list, along with a value to return. `SWITCH` will return the final value if and only if none of the earlier expressions were evaluated true.
+
+_Syntax:_
+
+```sql
+    SWITCH
+    (   expression1, value1,
+        expression2, value2,
+            ...
+        expression_n, value_n,
+        TRUE,         default_value
+    )
+```
+
+_Example:_
+
+```sql
+    SELECT
+        SWITCH
+        (
+            [code] = 'A', 'Apple',
+            [code] = 'B', 'Banana',
+            TRUE,         'Unknown'
+        )
+        AS [fruit_name]
+    FROM [Fruit$]
+```
+
+It is possible to execute a query within a `SWITCH` function, and use values from the `SELECT` statement in the embedded query, as in this example:
+
+```sql
+    SELECT
+        landscape.[Application_Name],
+        landscape.[Line_Of_Business],
+        landscape.[Application_Description],
+        SWITCH
+        (
+            [app id] IS NULL, 'NotAvailable',
+            True, ( SELECT [Category] FROM [Apps$] WHERE [APP ID] = landscape.[app id] )
+        )
+        AS [Application_Category]
+    FROM
+        [Landscape$] landscape,
+        [Apps$] apps
+    WHERE
+        landscape.[Domain] = 'Business Processes'
+```
 
 ### Aggregate Functions + Conditionals + Null Handling
 
@@ -360,9 +449,9 @@ Conditional tests are very useful in situations where you are aggregating data w
 
 _Example:_
 
-```
+```sql
     SELECT MIN(IIf(IsNull([Units Sold]), 0, [Units Sold]))
-    FROM [Sales$]
+    FROM  [Sales$]
     WHERE [country] = 'Canada'
 ```
 
@@ -381,14 +470,14 @@ The `FORMATDATETIME` function has a set of fixed options for formatting, shown b
 
 _Example:_
 
-```
+```sql
     SELECT
-    [Date],
-    FORMATDATETIME([Date],0) AS [FormatDateTime0],
-    FORMATDATETIME([Date],1) AS [FormatDateTime1],
-    FORMATDATETIME([Date],2) AS [FormatDateTime2],
-    FORMATDATETIME([Date],3) AS [FormatDateTime3],
-    FORMATDATETIME([Date],4) AS [FormatDateTime4]
+        [Date],
+        FORMATDATETIME([Date],0) AS [FormatDateTime0],
+        FORMATDATETIME([Date],1) AS [FormatDateTime1],
+        FORMATDATETIME([Date],2) AS [FormatDateTime2],
+        FORMATDATETIME([Date],3) AS [FormatDateTime3],
+        FORMATDATETIME([Date],4) AS [FormatDateTime4]
     FROM [Sales$]
 ```
 
@@ -396,7 +485,7 @@ _Example:_
 
 If you need a more flexible set of formatting options, the `FORMAT` function takes a format template string:
 |String|Description|
-|:----:|-----------|
+| :----: | ----------- |
 |d|display the day as a number without a leading zero (1 - 31).|
 |dd|Display the day as a number with a leading zero (01 - 31).|
 |ddd|Display the day as an abbreviation (Sun - Sat).|
@@ -411,7 +500,7 @@ If you need a more flexible set of formatting options, the `FORMAT` function tak
 
 _Example:_
 
-```
+```sql
     SELECT [Date], FORMAT([Date],"yyyy-mmm-dd") AS [formatted_date],
     FROM [Sales$]
 ```
@@ -424,7 +513,7 @@ The `FORMAT` function can also be used to format date formats other than dates. 
 
 _Example:_
 
-```
+```sql
     SELECT
       [Gross Sales],
       [Gross Sales]*0.06 as [Sales Tax]
@@ -435,7 +524,7 @@ The results of this query would have varying decimal places of 0 or more. To alw
 
 _Example:_
 
-```
+```sql
     SELECT
       [Gross Sales],
       FORMAT([Gross Sales]*0.06,'0.00') as [Sales Tax]
@@ -448,7 +537,7 @@ An alternate way to format numbers is to use the named numeric formats. Since we
 
 _Example:_
 
-```
+```sql
     SELECT
       [Gross Sales],
       FORMAT([Gross Sales]*0.06,'Currency') as [Sales Tax]
@@ -465,7 +554,7 @@ The `FROM` clause determines the specific dataset to examine to retrieve data. F
 
 _Example:_
 
-```
+```sql
     SELECT * FROM [Sales$];
 ```
 
@@ -473,9 +562,9 @@ In this example the Sales worksheet is specified as `[Sales$]`
 
 ## WHERE clause
 
-The `WHERE` clause, sometimes called the predicate, states the qualifying conditions for a query. You can combine arithmetic operators and the comparison operators in the `WHERE` clause. Multiple conditions can be joined by the `AND` and `OR` clauses, optionally surrounded by (parentheses) to group them. Only the records that satisfy the specified criteria are returned by the query.
+The `WHERE` clause, also known as the predicate, defines the conditions that must be met for a record to be included in the query results. It supports the use of arithmetic and comparison operators, and allows multiple conditions to be combined using `AND` and `OR` clauses. Parentheses can be used to group conditions for logical clarity. Only records matching the specified criteria are returned.
 
-### `WHERE` comparison operators
+### Comparison Operators
 
 Comparison operators test whether two expressions are the same. The following list contains the comparison operators supported in a `WHERE` clause. `WHERE` conditions follow the syntax:
 
@@ -497,27 +586,49 @@ When specifying the condition, value must be an exact match of the column value 
 
 String value comparisons are case sensitive. You can use the `UCASE()` (i.e. upper case) or `LCASE()` (i.e. lower case) function to perform case insensitive comparisons.
 
-
-
-
-### `WHERE` logical operators
+### Logical Operators
 
 Comparison operators test whether two expressions are the same. The following list contains the logical operators supported in a `WHERE` clause.
 
-| Operator | Description                                                                                                                                                                                                            |
-| :------: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-|   ALL    | Returns TRUE when all of the subquery values meet the condition.                                                                                                                                                       |
-|   AND    | Combines two Boolean expressions and returns TRUE when both expressions are TRUE.<br><br>_Syntax:_<br> condition `AND` condition                                                                                       |
-|   ANY    | Returns TRUE when any of the subquery values meet the condition.<br><br>_Syntax:_<br>condition `ANY` condition                                                                                                         |
-| BETWEEN  | Specifies a range to test. Returns TRUE when the operand is within the range of comparisons.<br><br>_Syntax:_<br>column `BETWEEN` value1 `AND` value2                                                                  |
-|  EXISTS  | Specifies a subquery to test for the existence of rows. Returns TRUE when the subquery returns one or more records.<br><br>_Syntax:_<br>column `EXISTS`                                                                |
-|    IN    | Determines whether a specified value matches any value in a subquery or a list. Returns TRUE when the operand is equal to one of a list of expressions.<br><br>_Syntax:_<br>column `IN` (value [, value ...])          |
-|   LIKE   | Determines whether a specific character string matches a specified pattern. Returns TRUE when the operand matches a pattern.<br><br>_Syntax:_<br>column `LIKE` like_expression                                         |
-|   NOT    | Negates a Boolean input (it reverses the value of any Boolean expression). It therefore returns TRUE when the expression is FALSE.<br><br>_Syntax:_<br>column `NOT EXISTS`<br>column `NOT BETWEEN` value1 `AND` value2 |
-|    OR    | Combines two conditions. Returns TRUE when either of the conditions is TRUE.<br><br>_Syntax:_<br> condition `OR` condition                                                                                             |
-|   SOME   | Same as ANY. Returns TRUE when any of the subquery values meet the condition.                                                                                                                                          |
+| Operator | Description                                                                                                                                                                                                                                                                                                           |
+| :------: | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|   ALL    | Returns TRUE when all of the subquery values meet the condition.                                                                                                                                                                                                                                                      |
+|   AND    | Combines two Boolean expressions and returns TRUE when both expressions are TRUE.<br><br>_Syntax:_<br> condition `AND` condition                                                                                                                                                                                      |
+|   ANY    | Returns TRUE when any of the subquery values meet the condition.<br><br>_Syntax:_<br>condition `ANY` condition                                                                                                                                                                                                        |
+| BETWEEN  | Specifies a range to test. Returns TRUE when the operand is within the range of comparisons.<br><br>_Syntax:_<br>column `BETWEEN` value1 `AND` value2                                                                                                                                                                 |
+|  EXISTS  | Specifies a subquery to test for the existence of rows. Returns TRUE when the subquery returns one or more records.<br><br>_Syntax:_<br>column `EXISTS`                                                                                                                                                               |
+|    IN    | Determines whether a specified value matches any value in a subquery or a list. Returns TRUE when the operand is equal to one of a list of expressions.<br><br>_Syntax:_<br>column `IN` (value [, value ...])<br><br>_Example:_<br>`SELECT * FROM [Presidents$] WHERE [NAME] IN ('Washington', 'Adams', 'Jefferson')` |
+|   LIKE   | Determines whether a specific character string matches a specified pattern. Returns TRUE when the operand matches a pattern.<br><br>_Syntax:_<br>column `LIKE` like_expression                                                                                                                                        |
+|   NOT    | Negates a Boolean input (it reverses the value of any Boolean expression). It therefore returns TRUE when the expression is FALSE.<br><br>_Syntax:_<br>column `NOT EXISTS`<br>column `NOT BETWEEN` value1 `AND` value2                                                                                                |
+|    OR    | Combines two conditions. Returns TRUE when either of the conditions is TRUE.<br><br>_Syntax:_<br> condition `OR` condition                                                                                                                                                                                            |
+|   SOME   | Same as ANY. Returns TRUE when any of the subquery values meet the condition.                                                                                                                                                                                                                                         |
 
-#### Boolean Precedence
+### LIKE Expressions / SQL Wildcards
+
+SQL Wildcards are special characters used as substitutes for one or more characters in a string. They are used with the `LIKE` operator in SQL, to search for specific patterns in character strings or compare various strings.
+
+The `LIKE` operator in SQL is case-sensitive, so it will only match strings that have the exact same case as the specified pattern.
+
+Following are the most commonly used wildcards in SQL
+
+| Wildcard | Description                                          |
+| :------: | :--------------------------------------------------- |
+|   `%`    | The percent sign `%` matches one or more characters. |
+|   `_`    | The underscore `_` matches one character.            |
+
+The percent sign `%` represents zero, one, or multiple characters within a string. The underscore `_` represents a single character or number. These symbols can also be used in combination to perform complex pattern searching and matching in SQL queries.
+
+| Clause                      | Description                                                                 |
+| :-------------------------- | :-------------------------------------------------------------------------- |
+| `WHERE SALARY LIKE '200%'`  | Finds any values that start with 200.                                       |
+| `WHERE SALARY LIKE '%200%'` | Finds any values that have 200 in any position.                             |
+| `WHERE SALARY LIKE '_00%'`  | Finds any values that have 00 in the second and third positions.            |
+| `WHERE SALARY LIKE '2*%*%'` | Finds any values that start with 2 and are at least 3 characters in length. |
+| `WHERE SALARY LIKE '%2'`    | Finds any values that end with 2.                                           |
+| `WHERE SALARY LIKE '_2%3'`  | Finds any values that have a 2 in the second position and end with a 3.     |
+| `WHERE SALARY LIKE '2___3'` | Finds any values in a five-digit number that start with 2 and end with 3.   |
+
+### Multiple Criteria / Boolean Precedence
 
 When using `AND` and `OR` to specify multiple conditions, use (parentheses) to group the conditions. If no parentheses are specified, the conditions specified with `AND` are evaluated together.
 
@@ -525,13 +636,13 @@ _Syntax:_
 
 The expression
 
-```
+```sql
     condition1 AND condition2 AND condition3 OR condition4
 ```
 
 is equivalent to
 
-```
+```sql
     (condition1) AND (condition2) AND (condition3 OR condition4)
 ```
 
@@ -539,7 +650,7 @@ _Syntax:_
 
 The expression
 
-```
+```sql
     condition1 AND condition2 OR condition3 AND condition4
 ```
 
@@ -547,30 +658,28 @@ is equivalent to
 
 _Syntax:_
 
-```
+```sql
     (condition1) AND (condition2 OR condition3) AND (condition4)
 ```
-
-### `WHERE` with multiple criteria
 
 Use a `WHERE` clause in your query to filter your Excel data.
 
 _Example:_
 
-```
+```sql
     SELECT [Quantity], [Name], [Price] FROM [Sales$]
     WHERE [Sale ID] >= 23 AND [Sale ID] <= 28;
 ```
 
 In this example, we limit our result set to records whose `[Sale ID]` is >= 23 and < 28. The syntax for column names in the `WHERE` clause uses square brackets, as we saw previously
 
-### `WHERE` with string values
+### String Values
 
 According to the SQL standard, the text delimiter in SQL is the single quotation mark (`'`). Use the single quote character (`'`) in your query to denote strings to match against your Excel data.
 
 _Example:_
 
-```
+```sql
     SELECT * FROM [Sales$]
     WHERE [Country] = 'Canada'
 ```
@@ -581,7 +690,7 @@ In this example, we limit our result set to records where the `[Country]` value 
 
 _Example:_
 
-```
+```sql
     SELECT UCASE([Name]),[Price]
     FROM [Sales$]
 ```
@@ -590,7 +699,7 @@ In the example above, the VBA `UCASE()` function is being used to convert the `N
 
 _Example:_
 
-```
+```sql
     SELECT [Sale ID], [Sale Date], [Quantity], [Name], [Price]
     FROM [Sales$]
     WHERE MID([Name],1,4) = 'NYNY'
@@ -600,7 +709,7 @@ Here the VBA `MID()` function is being used to limit our results to the records 
 
 _Example:_
 
-```
+```sql
     SELECT [Name], [Price], 'Central' AS [REGION]
     FROM [Sales$]
 ```
@@ -611,32 +720,32 @@ In Excel SQL the ampersand `&` symbol is used to peform string concatenation. In
 
 _Example:_
 
-```
+```sql
     SELECT
     [Street] & ', ' & [City], & ' ' & [State] & ' ' & [Zip Code] & ' USA' AS [Address]
     FROM [Sales$]
 ```
 
-### `WHERE` with date values
+### Date Values
 
 Date literals need to be enclosed in delimiters in SQL strings. The hash sign `#` acts as the delimiter for date values. Use the `#` character in your query to filter your Excel data by date.
 
 _Example:_
 
-```
+```sql
     SELECT * FROM [Sales$]
     WHERE [Date] BETWEEN #9/1/2013# AND #12/31/2013#
 ```
 
 In this example, we limit our result set to records between the dates of September 1, 2013 and December 31, 2013 by sepcifying the date in the local format and wrapping the value with `#` characters so a date comparison is performed against the date serial number instead of treating the date as a string value.
 
-### `WHERE` with delimiters in text literals
+### Delimiters in Text Literals
 
 Consider the case where you have a text field in your table and you want to query to query it within the WHERE condition of a query. In the query the criteria values themselves, however, contain the text delimiter, i.e. the single quote. This would be the case when searching for the name O'Brien. If you a text literal of 'O'Brien' inside your SQL statement it will cause a syntax error. The solution is to double the single quote inside the text literal and it will be treated as just one single quote inside the literal.
 
 _Example:_
 
-```
+```sql
     SELECT * FROM [Sales$] WHERE [CustomerName] = 'Martha O''Brian'
 ```
 
@@ -646,7 +755,7 @@ The `GROUP BY` clause is used in combination with aggregate functions (e.g. SUM)
 
 _Example:_
 
-```
+```sql
     SELECT DISTINCT [Name], SUM([Quantity])
     FROM [Sales$]
     GROUP BY [Name]
@@ -662,7 +771,7 @@ A typical select statement using the `HAVING` clause will follow the syntax patt
 
 _Syntax:_
 
-```
+```sql
     SELECT [column1], aggregate_function([column2]) FROM [worksheet$]
     GROUP BY [column1]
     HAVING aggregate_function([column2]) comparison_operator value
@@ -672,7 +781,7 @@ as in the following example which returns the count of the number of orders asso
 
 _Example:_
 
-```
+```sql
     SELECT [name], COUNT([orders])
     FROM [Sales$]
     GROUP BY [name]
@@ -687,9 +796,9 @@ A typical SELECT statement using the ORDER BY clause will follow the pattern:
 
 _Syntax:_
 
-```
-    SELECT [column1], [column2]
-    FROM [worksheet$]
+```sql
+    SELECT   [column1], [column2]
+    FROM     [worksheet$]
     ORDER BY [column1] ASC | DESC, [column2] ASC | DESC
 ```
 
@@ -697,7 +806,7 @@ where `ASC` refers to Ascending Order (A-Z, 0-9), and `DESC` refers to Descendin
 
 _Example:_
 
-```
+```sql
     SELECT *
     FROM [Sales$]
     ORDER BY [units sold] DESC
@@ -711,14 +820,16 @@ Note that the `ORDER BY` clause also cannot reference aliases, as you will recei
 
 _Example:_
 
-```
+```sql
     SELECT [country] AS CC, [Units Sold]
-    FROM [Sales$] AS sales
-    WHERE [sales.segment] = 'Government'
+    FROM   [Sales$] AS sales
+    WHERE  [sales.segment] = 'Government'
     ORDER BY 1
 ```
 
-## JOIN clause
+## Join Operations
+
+A JOIN clause is used to combine rows from two or more tables, based on a related column between them.
 
 There are different types of joins available in Excel SQL: `INNER JOIN`, `LEFT JOIN`, `RIGHT JOIN`, `CROSS JOIN`, and `self joins`.
 
@@ -726,7 +837,7 @@ There are different types of joins available in Excel SQL: `INNER JOIN`, `LEFT J
 - `LEFT JOIN` returns all rows from the left table even if there are no matches in the right table.
 - `RIGHT JOIN` returns all rows from the right table even if there are no matches in the left table.
 - `CROSS JOIN` (or `CARTESIAN JOIN`) returns the Cartesian product of the sets of records from two or more joined tables.
-- `Self join` is used to join a table to itself as if the table were two tables, temporarily renaming at least one table in the SQL statement.
+- Self joins is used to join a table to itself as if the table were two tables, temporarily renaming at least one table in the SQL statement.
   You can find the syntax for the different joins below.
 
 ### INNER JOIN clause
@@ -737,10 +848,10 @@ The `INNER JOIN` syntax follows this syntx pattern:
 
 _Syntax:_
 
-```
+```sql
     SELECT columns
-    FROM worksheet1 AS worksheet1_alias
-    INNER JOIN worksheet2 AS worsksheet2_alias
+    FROM       [worksheet1$] AS worksheet1_alias
+    INNER JOIN [worksheet2$] AS worksheet2_alias
     ON worksheet_alias1.column1 = worksheet2_alias.column2
 ```
 
@@ -748,12 +859,12 @@ The valid operator for the `ON` clause are `AND`, `OR`, `=`, `>`, `<`, `<>`, `>=
 
 _Example:_
 
-```
+```sql
     SELECT
         A.[Segment], A.[Country], A.[Product],
         B.[Units Sold], B.[SKU]
-    FROM [Products$] AS A
-    INNER JOIN [Sales$] AS B
+    FROM       [Products$] AS A
+    INNER JOIN [Sales$]    AS B
     ON A.[SKU] = B.[SKU]
 ```
 
@@ -765,10 +876,10 @@ The `LEFT JOIN` syntax follows this pattern:
 
 _Syntax:_
 
-```
+```sql
     SELECT columns
-    FROM worksheet1 AS worksheet1_alias
-    LEFT JOIN worksheet2 AS worsksheet2_alias
+    FROM      [worksheet1$] AS worksheet1_alias
+    LEFT JOIN [worksheet2$] AS worksheet2_alias
     ON worksheet_alias1.column1 = worksheet2_alias.column2
 ```
 
@@ -776,12 +887,12 @@ The valid operator for the `ON` clause are `AND`, `OR`, `=`, `>`, `<`, `<>`, `>=
 
 _Example:_
 
-```
+```sql
     SELECT
         A.[Segment], A.[Country], A.[Product],
         B.[Units Sold], B.[SKU]
-    FROM [Products$] AS A
-    LEFT JOIN [Sales$] AS B
+    FROM      [Products$] AS A
+    LEFT JOIN [Sales$]    AS B
     ON A.[SKU] = B.[SKU]
 ```
 
@@ -793,10 +904,10 @@ The `RIGHT JOIN` syntax follows this syntax pattern:
 
 _Syntax:_
 
-```
+```sql
     SELECT columns
-    FROM worksheet1 AS worksheet1_alias
-    RIGHT JOIN worksheet2 AS worsksheet2_alias
+    FROM       [worksheet1$] AS worksheet1_alias
+    RIGHT JOIN [worksheet2$] AS worksheet2_alias
     ON worksheet_alias1.column1 = worksheet2_alias.column2
 ```
 
@@ -804,12 +915,12 @@ The valid operator for the `ON` clause are `AND`, `OR`, `=`, `>`, `<`, `<>`, `>=
 
 _Example:_
 
-```
+```sql
     SELECT
         A.[Segment], A.[Country], A.[Product],
         B.[Units Sold], B.[SKU]
-    FROM [Products$] AS A
-    RIGHT JOIN [Sales$] AS B
+    FROM       [Products$] AS A
+    RIGHT JOIN [Sales$]    AS B
     ON A.[SKU] = B.[SKU]
 ```
 
@@ -821,39 +932,105 @@ The `CROSS JOIN` syntax follows this pattern:
 
 _Syntax:_
 
-```
+```sql
     SELECT column1, column2 FROM [worksheet1$] CROSS JOIN [worksheet2$]
 ```
 
 _Example:_
 
-```
+```sql
     SELECT A.[E_id], B.[P_id], A.[fname]
-    FROM [employee$] AS A
-    CROSS JOIN [project$] AS B
+    FROM       [employee$] AS A
+    CROSS JOIN [project$]  AS B
 ```
 
 ### Self Join
 
-`Self join` is used to join a table to itself as if the table were two tables, temporarily renaming at least one table in the SQL statement. To join a table itself means that each row of the table is combined with itself and with every other row of the table.
+A Self Join is used to join a table to itself as if the table were two tables, temporarily renaming at least one table in the SQL statement. To join a table itself means that each row of the table is combined with itself and with every other row of the table.
 
 The Self Join syntax follows this pattern:
 
 _Syntax:_
 
-```
+```sql
     SELECT column1, column2
-    FROM [worksheet1$] AS alias1, [worksheet1$] AS alias2
+    FROM [worksheet1$] AS alias1,
+         [worksheet1$] AS alias2
     WHERE alias1.column1 = alias2.column2
 ```
 
 _Example:_
 
-```
+```sql
     SELECT A.[E_id], B.[E_id]
-    FROM [employee$] AS A, [employee$] AS B
+    FROM [employee$] AS A,
+         [employee$] AS B
     WHERE A.[E_id] = B.[Mgr_id]
 ```
+
+## Algebraic Set Operations
+
+`UNION` and `UNION ALL` operators are the SQL implementation of algebraic set operators. Both operators are used to retrieve the rows from multiple tables and return them as one single table. The difference between these two operators is that `UNION` only returns distinct rows while `UNION ALL` returns all the rows present in the tables.
+
+However, for these operators to work, they need to follow these conditions:
+
+- The tables to be combined must have the same number of columns with the same datatype.
+- The number of rows need not be the same.
+
+Once these criterion are met, `UNION` or `UNION ALL` operator returns the rows from multiple tables as a resultant table.
+
+Column names of first table will become column names of the resultant table, and contents of second table will be merged into resultant columns of same data type.
+
+### UNION clause
+
+The SQL `UNION` clause/operator is used to combine the results of two or more SELECT statements without returning any duplicate rows.
+
+To use the `UNION` clause, each SELECT statement must have
+
+- The same number of columns selected
+- The same number of column expressions
+- The same data type and
+- Have them in the same order
+
+_Syntax:_
+
+```sql
+    SELECT [column1], [column2], ...
+    FROM [table1$], ...
+    [WHERE condition]
+
+    UNION
+
+    SELECT [column1], [column2], ...
+    FROM [table1$], ...
+    [WHERE condition]
+```
+
+With the condition being any valid `WHERE` expression.
+
+_Example:_
+
+```sql
+    SELECT [ID], [NAME], [AMOUNT], [DATE] FROM [West Region$]
+    UNION
+    SELECT [ID], [NAME], [AMOUNT], [DATE] FROM [East Region$]
+```
+
+This statement will combine the contents of the *West Region* worksheet, and the *East Region* worksheet, and eliminate the duplicate rows.
+
+### UNION ALL clause
+
+The `UNION ALL` operator is used to combine the results of two `SELECT` statements including duplicate rows.
+
+The same rules that apply to the `UNION` clause will apply to the `UNION ALL` operator.
+
+### INTERSECT clause
+
+The `INTERSECT` clause is like the `UNION` clause, but `INTERECT` is used to combine two `SELECT` statements, but return only the rows only from the first `SELECT` statement that are identical to a row in the second `SELECT` statement.
+
+### EXCEPT clause
+
+The `EXCEPT` clause is like the `UNION` clause, but `EXCEPT` is used to combine two `SELECT` statements and return only the rows only from the first `SELECT` statement that are not returned by the second `SELECT` statement.
 
 # Inserting Data
 
@@ -861,7 +1038,7 @@ Excel SQL supports `INSERT` statements for adding data to tables (i.e. worksheet
 
 _Syntax:_
 
-```
+```sql
     INSERT INTO [tablename$]( [column1], [column2], [column3], ... )
     VALUES( value1, value2, value3, ... )
 ```
@@ -872,7 +1049,7 @@ For example, we could do this
 
 _Example:_
 
-```
+```sql
     INSERT INTO [Pets$]( [PetId], [PetTypeId], [OwnerId], [PetName], [DOB] )
     VALUES( 1, 2, 3, 'Fluffy', '2020-12-20' );
 ```
@@ -883,7 +1060,7 @@ Note that the column names must match the used when the table was created.
 
 You can omit the column names if you’re inserting data into all columns. So we could change the above example to look like this:
 
-```
+```sql
    INSERT INTO [Pets$]
    VALUES( 1, 2, 3, 'Fluffy', '2020-12-20' );
 ```
@@ -894,7 +1071,7 @@ Excel SQL supports `UPDATE` statements to update data in your tables (i.e. works
 
 _Syntax:_
 
-```
+```sql
     UPDATE tablename
     SET [column1] = value1, [column2] = value2, [column3] = value3, ... )
     (optional) [WHERE condition]
@@ -906,20 +1083,20 @@ For example, we can perform a statement such as:
 
 _Example:_
 
-```
+```sql
     UPDATE [Sheet1$]
     SET [Units Sold] = 0
 ```
 
-In this example the 'Units Sold' column of every row will be set to 0.
+In this example the `'Units Sold'` column of every row will be set to 0.
 
 It is very important to include a [`WHERE` clause](#where-clause) unless you actually intend to update every row in the table with the same value.
 
-In the example below, we update the 'LastName' column to have a new value of 'Stallone' where the 'OwnerId' is 3.
+In the example below, we update the `'LastName'` column to have a new value of `'Stallone'` where the `'OwnerId'` is 3.
 
 _Example:_
 
-```
+```sql
     UPDATE [Owners$]
     SET [LastName] = 'Stallone'
     WHERE [OwnerId] = 3;
@@ -929,7 +1106,7 @@ _Example:_
 
 SQL provides the `DELETE` statement for deleting data tables. Excel SQL **does not** support `DELETE` statements. If you attempt to execute a SQL `DELETE` statement you will receive the error:
 
-```
+```sql
     Deleting data in a linked table is not supported by this ISAM.
 ```
 
@@ -937,7 +1114,7 @@ Excel SQL will allow you to wipe out the entire contents of a table (i.e. worksh
 
 _Syntax:_
 
-```
+```sql
     DROP TABLE [tablename$]
 ```
 
@@ -945,7 +1122,7 @@ For example, if we want to clear the contents of a worksheet named 'Customers' t
 
 _Example:_
 
-```
+```sql
     DROP TABLE [Customers$]
 ```
 
@@ -955,22 +1132,22 @@ This command will lear the worksheet called 'Customers'. All the data, including
 
 The following table summarizes the most commonly used String functions used in Microsoft Excel SQL statements.
 
-| Function | Description                                                                                                                                                                                                            |
-| :------: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| CHR | 	Returns the character based on the ASCII value. The syntax is <br><br>`CHR( ascii_value )`<br><br>where `ascii_value` is the decimal value used to retrieve the character from the [ASCII Table](https://www.techonthenet.com/ascii/chart.php). <br><br>For example, `CHR(37)` would return `%` (i.e. the Percent Sign character).|
-| INSTR| Returns the position of the first occurrence of a substring in a string. The syntax for the `INSTR` function in Microsoft Excel SQL is:<br><br>`INSTR( string, substring )`<br><br>where `string` is the string to search within, and `substring` is the substring which you want to find.<br><br>For example, the SQL uery <br><br>`SELECT [Segment], INSTR([Segment],'er') AS [erPosition] FROM [sheet1$]`<br><br>returns the position of the letters 'er' in the value of the `Segment` column. If `Segment` were to contain the value 'Government', the function will returns a value of 4. |
-| LCASE | 	Converts a string to all lowercase. The syntax for the `LCASE` function in Microsoft Excel SQL is:<br><br>`LCASE( text )`<br><br>where `text` is the string which you wish to convert to lower-case. |
-| LEFT | Extract a substring from a string, starting from the left-most character. The syntax for the `LEFT` function in Microsoft Excel SQL is:<br><br>`LEFT( text, number_of_characters )` <br><br>where `text` is the string which you wish to extract from, and `number_of_characters`  indicates the number of characters that you wish to extract starting from the left-most character. |
-| LEN | Returns the length of the specified string. The syntax for the `LEN` function in Microsoft Excel SQL is:<br><br>`LEN( text )`<br><br>where `text` is the string that you wish to determine the length of. |
-| LTRIM | Removes leading spaces from a string. The syntax for the `LTRIM` function in Microsoft Excel SQL is:<br><br>`LTRIM( text )`<br><br>where `text` is the string that you wish to remove leading spaces from. |
-| MID | Extracts a substring from a string (starting at any position). The syntax for the `MID` function in Microsoft Excel SQL is:<br><br>`MID( text, start_position, number_of_characters )`<br><br>where `text` is the string which you wish to extract from, `start_position`  indicates the position in the string that you will begin extracting from (the first position in the string is 1), and `number_of_characters` is the number of characters that you wish to extract. |
-| REPLACE | Replaces a sequence of characters in a string with another set of characters. The syntax for the REPLACE function in Microsoft Excel SQL is:<br><br>`REPLACE ( string1, find, replacement, [start, [count]] )`<br><br>Where `string1` is the string to replace a sequence of characters with another set of characters, `find` is the string that will be searched for in `string1`, `replacement` is the string which will replace `find` in `string1`. <br><br>For example, the SQL statement `SELECT REPLACE([Segment],' ','_') FROM [sheet1$]` would change all space characters in the `Segment` column values to underscores (a value such as 'Channel Partners' would be returned as 'Channel_Partners').<br><br>Parameter `start` is optional, and specifies the position in `string1` to begin the search. If the `start` parameter is omitted, the `REPLACE` function will begin the search at position 1. Parameter `count` is also optional, and specifies the the number of occurrences to replace. If the `count` parameter is omitted, the `REPLACE` function will replace all occurrences of `find` with `replacement`. If you wish to specify the `count` parameter, you must also specify the `start` parameter.<br><br>For example, the SQL statement `SELECT REPLACE([Segment],'e','X',1,2)FROM [sheet1$]` would change the first 2 occurences of the letter 'e' in the `Segment` values to the letter 'X' (A value such as 'Government' becomes 'GovXrnmXnt', while a value of 'Enterprise' becomes 'XntXrprise' )|
-| RIGHT | Extract a substring from a string, starting from the right-most character. The syntax for the `RIGHT` function in Microsoft Excel SQL is:<br><br>`RIGHT( text, number_of_characters )`<br><br>where `text` is the string which you wish to extract from, and `number_of_characters`  indicates the number of characters that you wish to extract starting from the right-most character. |
-| RTRIM | Removes trailing spaces from a string. The syntax for the `RTRIM` function in Microsoft Excel SQL is:<br><br>`RTRIM( text )`<br><br>where `text` is the string that you wish to remove trailing spaces from. |
-| SPACE | Returns a string value with a specified number of spaces. The syntax for the `SPACE` function in Microsoft Excel SQL is:<br><br>`SPACE( number )`<br><br>where `number` is the number of spaces to be returned. |
-| STR | Returns a string representation of a number. The syntax for the `STR` function in Microsoft Excel SQL is:<br><br>`STR( number )`<br><br>where `number` is the numeric value that you wish to convert to a string.|
-| TRIM | Returns a text value with the leading and trailing spaces removed. The syntax for the `TRIM` function in Microsoft Excel SQL is:<br><br>`TRIM( text )`<br><br>where `text` is the string that you wish to remove leading and trailing spaces from. |
-| UCASE | Converts a string to all uppercase. The syntax for the `UCASE` function in Microsoft Excel SQL is:<br><br>`UCASE( text )`<br><br>where `text` is the string which you wish to convert to upper-case. |
+| Function | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| :------: | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|   CHR    | Returns the character based on the ASCII value. The syntax is <br><br>`CHR( ascii_value )`<br><br>where `ascii_value` is the decimal value used to retrieve the character from the [ASCII Table](https://www.techonthenet.com/ascii/chart.php). <br><br>For example, `CHR(37)` would return `%` (i.e. the Percent Sign character).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+|  INSTR   | Returns the position of the first occurrence of a substring in a string. The syntax for the `INSTR` function in Microsoft Excel SQL is:<br><br>`INSTR( string, substring )`<br><br>where `string` is the string to search within, and `substring` is the substring which you want to find.<br><br>For example, the SQL uery <br><br>`SELECT [Segment], INSTR([Segment],'er') AS [erPosition] FROM [sheet1$]`<br><br>returns the position of the letters 'er' in the value of the `Segment` column. If `Segment` were to contain the value 'Government', the function will returns a value of 4.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+|  LCASE   | Converts a string to all lowercase. The syntax for the `LCASE` function in Microsoft Excel SQL is:<br><br>`LCASE( text )`<br><br>where `text` is the string which you wish to convert to lower-case.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+|   LEFT   | Extract a substring from a string, starting from the left-most character. The syntax for the `LEFT` function in Microsoft Excel SQL is:<br><br>`LEFT( text, number_of_characters )` <br><br>where `text` is the string which you wish to extract from, and `number_of_characters` indicates the number of characters that you wish to extract starting from the left-most character.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+|   LEN    | Returns the length of the specified string. The syntax for the `LEN` function in Microsoft Excel SQL is:<br><br>`LEN( text )`<br><br>where `text` is the string that you wish to determine the length of.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+|  LTRIM   | Removes leading spaces from a string. The syntax for the `LTRIM` function in Microsoft Excel SQL is:<br><br>`LTRIM( text )`<br><br>where `text` is the string that you wish to remove leading spaces from.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+|   MID    | Extracts a substring from a string (starting at any position). The syntax for the `MID` function in Microsoft Excel SQL is:<br><br>`MID( text, start_position, number_of_characters )`<br><br>where `text` is the string which you wish to extract from, `start_position` indicates the position in the string that you will begin extracting from (the first position in the string is 1), and `number_of_characters` is the number of characters that you wish to extract.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| REPLACE  | Replaces a sequence of characters in a string with another set of characters. The syntax for the REPLACE function in Microsoft Excel SQL is:<br><br>`REPLACE ( string1, find, replacement, [start, [count]] )`<br><br>Where `string1` is the string to replace a sequence of characters with another set of characters, `find` is the string that will be searched for in `string1`, `replacement` is the string which will replace `find` in `string1`. <br><br>For example, the SQL statement `SELECT REPLACE([Segment],' ','_') FROM [sheet1$]` would change all space characters in the `Segment` column values to underscores (a value such as 'Channel Partners' would be returned as 'Channel_Partners').<br><br>Parameter `start` is optional, and specifies the position in `string1` to begin the search. If the `start` parameter is omitted, the `REPLACE` function will begin the search at position 1. Parameter `count` is also optional, and specifies the the number of occurrences to replace. If the `count` parameter is omitted, the `REPLACE` function will replace all occurrences of `find` with `replacement`. If you wish to specify the `count` parameter, you must also specify the `start` parameter.<br><br>For example, the SQL statement `SELECT REPLACE([Segment],'e','X',1,2)FROM [sheet1$]` would change the first 2 occurences of the letter 'e' in the `Segment` values to the letter 'X' (A value such as 'Government' becomes 'GovXrnmXnt', while a value of 'Enterprise' becomes 'XntXrprise' ) |
+|  RIGHT   | Extract a substring from a string, starting from the right-most character. The syntax for the `RIGHT` function in Microsoft Excel SQL is:<br><br>`RIGHT( text, number_of_characters )`<br><br>where `text` is the string which you wish to extract from, and `number_of_characters` indicates the number of characters that you wish to extract starting from the right-most character.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+|  RTRIM   | Removes trailing spaces from a string. The syntax for the `RTRIM` function in Microsoft Excel SQL is:<br><br>`RTRIM( text )`<br><br>where `text` is the string that you wish to remove trailing spaces from.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+|  SPACE   | Returns a string value with a specified number of spaces. The syntax for the `SPACE` function in Microsoft Excel SQL is:<br><br>`SPACE( number )`<br><br>where `number` is the number of spaces to be returned.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+|   STR    | Returns a string representation of a number. The syntax for the `STR` function in Microsoft Excel SQL is:<br><br>`STR( number )`<br><br>where `number` is the numeric value that you wish to convert to a string.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+|   TRIM   | Returns a text value with the leading and trailing spaces removed. The syntax for the `TRIM` function in Microsoft Excel SQL is:<br><br>`TRIM( text )`<br><br>where `text` is the string that you wish to remove leading and trailing spaces from.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+|  UCASE   | Converts a string to all uppercase. The syntax for the `UCASE` function in Microsoft Excel SQL is:<br><br>`UCASE( text )`<br><br>where `text` is the string which you wish to convert to upper-case.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 
 # Resources/Acknowlegements
 
@@ -993,7 +1170,7 @@ Microsoft provives a [free Excel spreadsheet containing sample data](https://go.
 
 MIT License
 
-Copyright (c) 2022 Jeffrey Long
+Copyright (c) 2022-2025 Jeffrey Long
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
@@ -1004,4 +1181,3 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 # Trademarks
 
 "Windows", "Microsoft Windows", "Microsoft Office", "Microsoft Office Excel", "Microsoft Excel", "Excel", "Microsoft Jet", and "Microsoft ACE" are trademarks or registered trademarks of Microsoft Corporation.
-
